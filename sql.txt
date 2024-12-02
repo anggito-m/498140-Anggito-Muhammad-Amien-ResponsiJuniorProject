@@ -1,0 +1,98 @@
+CREATE DATABASE Responsi;
+
+-- Drop tabel jika sudah ada sebelumnya
+DROP TABLE IF EXISTS karyawan;
+DROP TABLE IF EXISTS departemen;
+
+-- Membuat tabel departemen
+CREATE TABLE departemen (
+    id_dep VARCHAR(10) PRIMARY KEY, -- Menggunakan kode sebagai primary key
+    nama_dep VARCHAR(100) NOT NULL
+);
+
+-- Membuat tabel karyawan
+CREATE TABLE karyawan (
+    id_karyawan SERIAL PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    id_dep VARCHAR(10) NOT NULL REFERENCES departemen(id_dep) ON DELETE CASCADE
+);
+-- DROP FUNCTION select_all() 
+CREATE OR REPLACE FUNCTION select_all()
+RETURNS TABLE (id_karyawan INT, nama VARCHAR, id_dep VARCHAR, nama_dep VARCHAR) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        k.id_karyawan,
+        k.nama,
+        k.id_dep,
+        d.nama_dep
+    FROM 
+        karyawan k
+    JOIN 
+        departemen d ON k.id_dep = d.id_dep;
+END;
+$$ LANGUAGE plpgsql;
+
+-- DROP FUNCTION insert_data(_nama VARCHAR, _id_dep INT)
+CREATE OR REPLACE FUNCTION insert_data(_nama VARCHAR, _id_dep VARCHAR)
+RETURNS INT AS $$
+DECLARE
+    result INT;
+BEGIN
+    INSERT INTO karyawan (nama, id_dep) VALUES (_nama, _id_dep);
+    result := 1;
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION update_data(_id_karyawan INT, _nama VARCHAR, _id_dep VARCHAR)
+RETURNS INT AS $$
+DECLARE
+    result INT;
+BEGIN
+    UPDATE karyawan
+    SET nama = _nama, id_dep = _id_dep
+    WHERE id_karyawan = _id_karyawan;
+
+    IF FOUND THEN
+        result := 1;
+    ELSE
+        result := 0;
+    END IF;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION delete_by_id(_id_karyawan INT)
+RETURNS INT AS $$
+DECLARE
+    result INT;
+BEGIN
+    DELETE FROM karyawan WHERE id_karyawan = _id_karyawan;
+
+    IF FOUND THEN
+        result := 1;
+    ELSE
+        result := 0;
+    END IF;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+
+INSERT INTO departemen (id_dep, nama_dep) VALUES
+('HR', 'Human Resources'),
+('ENG', 'Engineering'),
+('FIN', 'Finance'),
+('PM', 'Product Manager'),
+('DEV', 'Development');
+
+INSERT INTO karyawan (nama, id_dep) VALUES
+('John Doe', 'HR'),
+('Jane Smith', 'ENG'),
+('Alice Johnson', 'FIN'),
+('Bob Brown', 'PM'),
+('Charlie White', 'DEV');
+
